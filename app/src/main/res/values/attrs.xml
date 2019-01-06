@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="MainView">
+        <!-- dimension related attrs -->
+        <!-- 整个界面分为上、中、下三个部分，上面展示游戏标题和得分信息，中间是游戏面板，底部是提示信息 -->
+        <attr name="top_width" format="dimension"></attr>
+        <attr name="game_board_width" format="dimension"></attr>
+        <attr name="bottom_width" format="dimension"></attr>
+        
+
+        <!-- color related attrs -->
+        <!-- 由上到下依次为背景颜色、字体颜色、记分板背景色、记分板内字体颜色 -->
+        <attr name="background_color" format="color"></attr>
+        <attr name="text_color" format="color"></attr>
+        <attr name="block_background_color" format="color"></attr>
+        <attr name="block_text_color" format="color"></attr>
+
+
+        <!-- text size related attrs -->
+        <!-- 由上到下依次为标题字体尺寸、记分板内字体尺寸 -->
+        <attr name="title_text_size" format="dimension"></attr>
+        <attr name="block_text_size" format="dimension"></attr>
+
+        <!-- grid dimension related attrs -->
+        <!-- 由上到下依次为格子边长、格子之间间距 -->
+        <attr name="grid_size" format="dimension"></attr>
+        <attr name="grid_margin_size" format="dimension"></attr>
+    </declare-styleable>
+</resources>

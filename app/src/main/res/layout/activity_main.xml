@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <com.zhangshen147.android.simple2048.MainView
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+
+        app:background_color="#ed9f3a"
+        app:text_color="#654a26"
+        app:block_background_color="#593f1c"
+        app:block_text_color="#ffffff">
+
+    </com.zhangshen147.android.simple2048.MainView>
+
+</LinearLayout>
