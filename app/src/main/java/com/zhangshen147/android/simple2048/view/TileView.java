@@ -25,28 +25,30 @@ public class TileView extends View{
 
     private int mValue;
     private String mValueString;
-    private Paint mPaint;
-    private int mColor;
+    private Paint mPaint = new Paint();
+    private int mBackgroundColor;
+    private int mTextColor;
     private Rect mBound;
 
     // root view 的宽度、高度、内边距
     private int mViewWidth;
     private int mViewHeight;
-    private int mTextSize;
+    private float mTextSize;
 
-    public TileView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int textSize) {
+
+    public TileView(Context context, float textSize) {
+        this(context, null, textSize);
+    }
+    public TileView(Context context, @Nullable AttributeSet attrs, float textSize) {
+        this(context, attrs, 0, textSize);
+    }
+    public TileView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, float textSize) {
         super(context, attrs, defStyleAttr);
-        mPaint = new Paint();
+        setWillNotDraw(false);
+        mTextColor = Color.parseColor("#88000000");
         mTextSize = textSize;
     }
 
-    public TileView(Context context, @Nullable AttributeSet attrs, int textSize) {
-        this(context, attrs, 0, textSize);
-    }
-
-    public TileView(Context context, int textSize) {
-        this(context, null, textSize);
-    }
 
     void setValue(int val){
         this.mValue = val;
@@ -56,7 +58,7 @@ public class TileView extends View{
         mBound = new Rect();
         mPaint.getTextBounds(mValueString,0, mValueString.length(), mBound);
         invalidate();
-        Log.e(TAG, "setValue: value为" + String.valueOf(val));
+        Log.d(TAG, "setValue: value为" + String.valueOf(val));
     }
 
     int getValue(){
@@ -76,50 +78,49 @@ public class TileView extends View{
         super.onDraw(canvas);
         switch (mValue){
             case 0:
-                mColor = getResources().getColor(R.color.color_0);
+                mBackgroundColor = getResources().getColor(R.color.color_0);
                 break;
             case 2:
-                mColor = getResources().getColor(R.color.color_2);
+                mBackgroundColor = getResources().getColor(R.color.color_2);
                 break;
             case 4:
-                mColor = getResources().getColor(R.color.color_4);
+                mBackgroundColor = getResources().getColor(R.color.color_4);
                 break;
             case 8:
-                mColor = getResources().getColor(R.color.color_8);
+                mBackgroundColor = getResources().getColor(R.color.color_8);
                 break;
             case 16:
-                mColor = getResources().getColor(R.color.color_16);
+                mBackgroundColor = getResources().getColor(R.color.color_16);
                 break;
             case 32:
-                mColor = getResources().getColor(R.color.color_32);
+                mBackgroundColor = getResources().getColor(R.color.color_32);
                 break;
             case 64:
-                mColor = getResources().getColor(R.color.color_64);
+                mBackgroundColor = getResources().getColor(R.color.color_64);
                 break;
             case 128:
-                mColor = getResources().getColor(R.color.color_128);
+                mBackgroundColor = getResources().getColor(R.color.color_128);
                 break;
             case 256:
-                mColor = getResources().getColor(R.color.color_256);
+                mBackgroundColor = getResources().getColor(R.color.color_256);
                 break;
             case 512:
-                mColor = getResources().getColor(R.color.color_512);
+                mBackgroundColor = getResources().getColor(R.color.color_512);
                 break;
             case 1024:
-                mColor = getResources().getColor(R.color.color_1024);
+                mBackgroundColor = getResources().getColor(R.color.color_1024);
                 break;
             case 2048:
-                mColor = getResources().getColor(R.color.color_2048);
+                mBackgroundColor = getResources().getColor(R.color.color_2048);
                 break;
             default:
-                mColor = getResources().getColor(R.color.color_default);
+                mBackgroundColor = getResources().getColor(R.color.color_default);
                 break;
         }
 
-        mPaint.setColor(mColor);
+        mPaint.setColor(mBackgroundColor);
         mPaint.setStyle(Paint.Style.FILL);
-
-        // 版本判断，API 21 以上绘制圆角更美观
+        // 绘制背景，版本判断，若 API 21 以上，绘制圆角更美观
         if (Build.VERSION.SDK_INT >= 21){
             canvas.drawRoundRect(0, 0, mViewWidth, mViewHeight, 25, 25 , mPaint);
         }else{
@@ -127,11 +128,13 @@ public class TileView extends View{
 
         }
 
+        // 绘制数字
         if (mValue != 0){
-            mPaint.setColor(Color.BLACK);
+            mPaint.setColor(mTextColor);
             float x = getWidth()/2 - mBound.width()/2;
             float y = getHeight()/2 + mBound.height()/2;
             canvas.drawText(mValueString, x, y, mPaint);
         }
+        Log.d(TAG, "onDraw: 被调用");
     }
 }

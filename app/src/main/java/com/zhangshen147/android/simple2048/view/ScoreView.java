@@ -12,7 +12,7 @@ import android.view.View;
 import com.zhangshen147.android.simple2048.R;
 
 /**
- * @object 自定义记分板
+ * @describe 自定义View——积分板
  */
 public class ScoreView extends View{
 
@@ -89,13 +89,6 @@ public class ScoreView extends View{
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
-        // 绘制底色
-//        mPaint.setColor(mBackGroundColor);
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//            canvas.drawRoundRect(0, 0, mWidth, mHeight, 10, 10, mPaint);
-//        }
-
         drawTitle(canvas);
         drawScore(canvas);
     }

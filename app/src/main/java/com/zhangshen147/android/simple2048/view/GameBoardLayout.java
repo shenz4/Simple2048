@@ -2,9 +2,11 @@ package com.zhangshen147.android.simple2048.view;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
-import android.os.Build;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.RelativeLayout;
@@ -12,6 +14,7 @@ import android.widget.RelativeLayout;
 import com.zhangshen147.android.simple2048.R;
 import com.zhangshen147.android.simple2048.config.GameConfig;
 import com.zhangshen147.android.simple2048.enumerate.Action;
+import com.zhangshen147.android.simple2048.enumerate.GameStatus;
 import com.zhangshen147.android.simple2048.interfaces.OnGameStatusChangedListener;
 
 import java.util.ArrayList;
@@ -26,26 +29,22 @@ public class GameBoardLayout extends RelativeLayout {
 
     private static final String TAG = "GameBoard";
 
-
-    // 存放所有 tile 的数组
-    private TileView[][] mTiles;
-    // root layout 的宽度、高度、内边距
-    private float mLayoutPadding;
-    // 瓦片外边距、边长
+    // View 自身参数
+    private int mLayoutWidth;
+    private int mLayoutHeight;
+    // 内边距、外边距
     private float mTileMargin;
-    private float mTileLength;
-    // game board 边长
-    private float mLayoutLength;
-    // 当前分数
-    private int mCurrentScore;
-    // 手势监听、游戏状态监听
-    private OnGameStatusChangedListener mGameStatusListener;
+
     // others
     private Context mContext;
-    private Paint mPaint;
+    Paint mPaint = new Paint();
+    private TileView[][] mTiles;
+    private int mCurrentScore;
     private boolean once = false;
-    private int mLayoutBackgroundColor;
     private int mTileTextSize;
+    public GameStatus mCurrentGameStatus = GameStatus.NORMAL;
+    private OnGameStatusChangedListener mGameStatusListener;
+    Bitmap ForegroundBitmap;
 
     // Constructor
     public GameBoardLayout(Context context) {
@@ -61,52 +60,80 @@ public class GameBoardLayout extends RelativeLayout {
         super(context, attrs, defStyleAttr);
 
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.GameBoardLayout);
-        mLayoutPadding = ta.getDimension(R.styleable.GameBoardLayout_layout_padding, 2);
         mTileMargin = ta.getDimension(R.styleable.GameBoardLayout_tile_margin, 2);
-        mLayoutBackgroundColor = ta.getColor(R.styleable.GameBoardLayout_bottom_color, 0);
         mTileTextSize = (int)ta.getDimension(R.styleable.GameBoardLayout_tile_text_size, 0);
         ta.recycle();
 
         mContext = context;
         mGameStatusListener = (OnGameStatusChangedListener) context;
+
+        int n = GameConfig.GAME_LEVEL;
+        mTiles = new TileView[n][n];
+    }
+
+
+    private void drawForeground(Bitmap bitmap) {
+        int transparentColor = Color.parseColor("#88000000");
+        String showText;
+        Canvas canvas = new Canvas(bitmap);
+        Drawable drawable = getBackground();
+        switch (mCurrentGameStatus){
+            case NORMAL:
+                break;
+            case FAIL:
+                canvas.drawColor(transparentColor);
+                showText = "Game Over!";
+                drawTextOnForeground(canvas, showText);
+                break;
+            case STEP_SUCCESS:
+                showText = "Success!";
+                drawTextOnForeground(canvas, showText);
+                break;
+            case EVENTLY_SUCCESS:
+                showText = "Congratulation!";
+                drawTextOnForeground(canvas, showText);
+                break;
+        }
+    }
+
+    private void drawTextOnForeground(Canvas canvas, String text) {
+        mPaint.setFakeBoldText(true);
+        mPaint.setTextSize((float) (mTileTextSize * 1.8));
+        mPaint.setColor(getResources().getColor(R.color.text_brown));
+        float x = mLayoutWidth/2 - mPaint.measureText(text)/2;
+        float y = mLayoutHeight/2;
+        canvas.drawText(text, x, y, mPaint);
     }
 
 
     @Override
-    protected void dispatchDraw(Canvas canvas) {
-        if(mPaint == null){
-            mPaint = new Paint();
-        }
-        mPaint.setColor(mLayoutBackgroundColor);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            canvas.drawRoundRect(0, 0 ,mLayoutLength, mLayoutLength, 40, 40, mPaint);
-        }
-
-        super.dispatchDraw(canvas);
-        newGame();
+    public void onDrawForeground(Canvas canvas) {
+        super.onDrawForeground(canvas);
+        Bitmap bitmap = Bitmap.createBitmap(mLayoutWidth, mLayoutHeight, Bitmap.Config.ARGB_8888);
+        drawForeground(bitmap);
+        canvas.drawBitmap(bitmap, 0, 0, null);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        mLayoutLength = Math.min(getMeasuredWidth(), getMeasuredHeight());
-        mTileLength = (mLayoutLength - 2 * mTileMargin * GameConfig.GAME_LEVEL)
+        mLayoutWidth = mLayoutHeight = Math.min(getMeasuredWidth(), getMeasuredHeight());
+        float mTileLength = (mLayoutWidth - 2 * mTileMargin * GameConfig.GAME_LEVEL)
                 / GameConfig.GAME_LEVEL;
 
         if (!once) {
             int n = GameConfig.GAME_LEVEL;
-            if (mTiles == null) {
-                mTiles = new TileView[GameConfig.GAME_LEVEL][GameConfig.GAME_LEVEL];
-            }
 
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
-                    TileView t = new TileView(getContext(), mTileTextSize);
-                    mTiles[i][j] = t;
+                    if(mTiles[i][j] == null){
+                        mTiles[i][j] = new TileView(getContext(), mTileTextSize);
+                    }
+                    TileView currentTile = mTiles[i][j];
 
                     // id 值不能为 0 ，故需加 1
-                    t.setId(i * n + j + 1);
+                    currentTile.setId(i * n + j + 1);
 
                     // 为每个瓦块设置边距
                     RelativeLayout.LayoutParams lp = new LayoutParams((int) mTileLength, (int) mTileLength);
@@ -122,53 +149,45 @@ public class GameBoardLayout extends RelativeLayout {
                         lp.addRule(RelativeLayout.RIGHT_OF, mTiles[i][j - 1].getId());
                     }
 
-                    addView(t, lp);
-                    Log.e(TAG, String.valueOf(i) + "," + String.valueOf(j));
-                    Log.e(TAG, "id=" + String.valueOf(t.getId()));
+                    addView(currentTile, lp);
+                    Log.d(TAG, String.valueOf(i) + "," + String.valueOf(j));
+                    Log.d(TAG, "id=" + String.valueOf(currentTile.getId()));
                 }
 
             }
+            Log.d(TAG, "onMeasure: 添加布局");
         }
         once = true;
-        setMeasuredDimension((int) mLayoutLength, (int) mLayoutLength);
+        setMeasuredDimension(mLayoutWidth, mLayoutHeight);
     }
 
 
-
-
     public void newGame() {
-
         int n = GameConfig.GAME_LEVEL;
 
         mCurrentScore = 0;
-
-        if (mTiles == null) {
-            mTiles = new TileView[GameConfig.GAME_LEVEL][GameConfig.GAME_LEVEL];
-        }
-
-        for (int i = 0; i < GameConfig.GAME_LEVEL; i++) {
-            for (int j = 0; j < GameConfig.GAME_LEVEL; j++) {
-
-                if (mTiles[i][j] == null) {
-                    mTiles[i][j] = new TileView(mContext, mTileTextSize);
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (mTiles[i][i] == null){
+                    mTiles[i][j] = new TileView(getContext(), mTileTextSize);
+                    mTiles[i][j].setValue(0);
                 }
-                mTiles[i][j].setValue(0);
             }
         }
+        generateNum();
+        generateNum();
         if (mGameStatusListener != null) {
             mGameStatusListener.onScoreChange(mCurrentScore);
         }
-
-        generateNum();
-        generateNum();
+        Log.d(TAG, "newGame: 开始游戏");
     }
 
     // 生成随机数
     private void generateNum() {
 
         // 如果游戏结束
-        if (checkOver()) {
-            Log.e(TAG, "generateNum: ganme over!");
+        if (isGameFailed()) {
+            Log.d(TAG, "generateNum: ganme over!");
             if (mGameStatusListener != null) {
                 mGameStatusListener.onGameOver(mCurrentScore);
             }
@@ -176,7 +195,7 @@ public class GameBoardLayout extends RelativeLayout {
         }
 
         // 如果格子没满
-        if (!isFull()) {
+        if (isHasEmptyPosition()) {
             int n = GameConfig.GAME_LEVEL;
             Random random = new Random();
 
@@ -187,38 +206,31 @@ public class GameBoardLayout extends RelativeLayout {
             } while (mTiles[x][y].getValue() != 0);
 
             mTiles[x][y].setValue(Math.random() > 0.8 ? 4 : 2);
-            Log.e(TAG, "generateNum: x,y" + String.valueOf(x) + "," + String.valueOf(y));
+            Log.d(TAG, "generateTile");
 
         }
     }
 
 
-    /**
-     * @return false 棋盘还没有满，可以继续游戏
-     */
-    private boolean isFull() {
+
+    private boolean isHasEmptyPosition() {
         for (TileView[] items : mTiles) {
             for (TileView item : items) {
                 if (item.getValue() == 0) {
-                    return false;
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
     }
 
 
-    /**
-     * @return false 游戏还可以继续
-     */
-    private boolean checkOver() {
+    private boolean isGameFailed() {
         int n = GameConfig.GAME_LEVEL;
 
-        boolean tag = true;
-        if (!isFull()) {
-            tag = false;
+        if (isHasEmptyPosition()) {
+            return false;
         } else {
-            label:
             for (int i = 0; i < n; i++) {
 
                 // 把不为 0 的 tiles 收集起来
@@ -231,12 +243,11 @@ public class GameBoardLayout extends RelativeLayout {
 
                 // 若需要移动，则置 tag 为 false;
                 if (isRequireMerge(convertListToArray(row, n))) {
-                    tag = false;
-                    break label;
+                    return false;
                 }
             }
         }
-        return tag;
+        return true;
     }
 
 
@@ -266,7 +277,7 @@ public class GameBoardLayout extends RelativeLayout {
                     for (int i = 0; i <= n-1; i++) {
                         mTiles[i][j].setValue(num_array[count]);
                         count++;
-                        Log.e(TAG, "action: i,j,v分别为" + String.valueOf(i) + "," + String.valueOf(j) + "," + String.valueOf(num_array[count-1]));
+                        Log.d(TAG, "action: i,j,v分别为" + String.valueOf(i) + "," + String.valueOf(j) + "," + String.valueOf(num_array[count-1]));
                     }
 
                 }
@@ -293,7 +304,7 @@ public class GameBoardLayout extends RelativeLayout {
                     for (int i = n - 1; i >= 0; i--) {
                         mTiles[i][j].setValue(num_array[count]);
                         count++;
-                        Log.e(TAG, "action: i,j,v分别为" + String.valueOf(i) + "," + String.valueOf(j) + "," + String.valueOf(num_array[count-1]));
+                        Log.d(TAG, "action: i,j,v分别为" + String.valueOf(i) + "," + String.valueOf(j) + "," + String.valueOf(num_array[count-1]));
                     }
                 }
                 break;
@@ -317,7 +328,7 @@ public class GameBoardLayout extends RelativeLayout {
                     for (int j = 0; j < n; j++) {
                         mTiles[i][j].setValue(num_array[count]);
                         count++;
-                        Log.e(TAG, "action: i,j,v分别为" + String.valueOf(i) + "," + String.valueOf(j) + "," + String.valueOf(num_array[count-1]));
+                        Log.d(TAG, "action: i,j,v分别为" + String.valueOf(i) + "," + String.valueOf(j) + "," + String.valueOf(num_array[count-1]));
                     }
                 }
                 break;
@@ -342,7 +353,7 @@ public class GameBoardLayout extends RelativeLayout {
                     for (int j = n-1; j >= 0; j--) {
                         mTiles[i][j].setValue(num_array[count]);
                         count++;
-                        Log.e(TAG, "action: i,j,v分别为" + String.valueOf(i) + "," + String.valueOf(j) + "," + String.valueOf(num_array[count-1]));
+                        Log.d(TAG, "action: i,j,v分别为" + String.valueOf(i) + "," + String.valueOf(j) + "," + String.valueOf(num_array[count-1]));
                     }
                 }
         }

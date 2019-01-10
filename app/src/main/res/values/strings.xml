@@ -1,7 +1,5 @@
 <resources>
     <string name="app_name">simple2048</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="game_notice">swipe to move.2+2=4.Reach 2048</string>
+    <string name="title_2048">2048</string>
 </resources>

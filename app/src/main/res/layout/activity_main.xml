@@ -4,95 +4,101 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#faf8ef"
+    android:background="@color/app_background"
     android:orientation="vertical"
     tools:context=".MainActivity">
 
     <RelativeLayout
         android:id="@+id/layout_title"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:layout_marginTop="10dp">
+        android:layout_height="@dimen/dp_150"
+        android:layout_marginTop="@dimen/dp_10">
 
         <TextView
             android:id="@+id/text_2048"
-            android:layout_width="140dp"
-            android:layout_height="90dp"
-            android:layout_marginTop="10dp"
+            android:layout_width="@dimen/dp_140"
+            android:layout_height="@dimen/dp_90"
+            android:layout_marginTop="@dimen/dp_10"
             android:fontFamily="@font/clearsans_bold"
-            android:text="2048"
+            android:text="@string/title_2048"
             android:textAlignment="center"
             android:textColor="@color/text_black"
-            android:textSize="50sp" />
+            android:textSize="@dimen/sp_48" />
 
         <com.zhangshen147.android.simple2048.view.ScoreView
             android:id="@+id/current_score"
-            android:layout_width="70dp"
-            android:layout_height="70dp"
+            android:layout_width="@dimen/dp_90"
+            android:layout_height="@dimen/dp_70"
             android:layout_alignTop="@id/text_2048"
-            android:layout_marginRight="10dp"
+            android:layout_marginRight="@dimen/dp_10"
+            android:layout_marginEnd="@dimen/dp_10"
             android:layout_toLeftOf="@id/highest_score"
-            android:background="@drawable/shape_round_rect"
-            app:background_color="@color/game_board_background"
+            android:background="@drawable/shape_round_rect_brown"
+            app:background_color="@color/game_background"
             app:score_color="@color/text_white"
-            app:score_size="18sp"
+            app:score_size="@dimen/sp_18"
             app:title="SCORE"
-            app:title_color="@color/text_black"
-            app:title_size="18sp" />
+            app:title_color="@color/text_brown"
+            app:title_size="@dimen/sp_18"
+            android:layout_toStartOf="@id/highest_score" />
 
         <com.zhangshen147.android.simple2048.view.ScoreView
             android:id="@+id/highest_score"
-            android:layout_width="110dp"
-            android:layout_height="70dp"
+            android:layout_width="@dimen/dp_90"
+            android:layout_height="@dimen/dp_70"
             android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
             android:layout_alignTop="@id/text_2048"
-            android:layout_marginRight="10dp"
-            android:background="@drawable/shape_round_rect"
-            app:background_color="@color/game_board_background"
+            android:layout_marginRight="@dimen/dp_10"
+            android:layout_marginEnd="@dimen/dp_10"
+            android:background="@drawable/shape_round_rect_brown"
+            app:background_color="@color/game_background"
             app:score_color="@color/text_white"
-            app:score_size="18sp"
+            app:score_size="@dimen/sp_18"
             app:title="HIGHEST"
-            app:title_color="@color/text_black"
-            app:title_size="18sp" />
+            app:title_color="@color/text_brown"
+            app:title_size="@dimen/sp_18" />
 
         <ImageView
             android:id="@+id/new_game"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="10dp"
-            android:src="@drawable/ic_button_restart"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignRight="@id/highest_score"
+            android:layout_alignEnd="@id/highest_score"
             android:layout_below="@id/highest_score"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="25dp"
-            android:background="@drawable/shape_round_rect" />
+            android:layout_marginRight="@dimen/dp_10"
+            android:layout_marginEnd="@dimen/dp_10"
+            android:layout_marginTop="@dimen/dp_10"
+            android:background="@drawable/shape_round_rect_brown"
+            android:padding="@dimen/dp_5"
+            android:src="@drawable/ic_button_restart" />
 
     </RelativeLayout>
 
     <com.zhangshen147.android.simple2048.view.GameBoardLayout
-        android:id="@+id/game_board"
+        android:id="@+id/layout_game_board"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginLeft="15dp"
-        android:layout_marginTop="30dp"
+        android:layout_marginLeft="@dimen/dp_10"
+        android:layout_marginRight="@dimen/dp_10"
+        android:layout_marginTop="@dimen/dp_10"
+        android:background="@drawable/shape_round_rect_brown"
 
-        app:bottom_color="@color/game_board_background"
-        app:layout_padding="5dp"
+        app:layout_padding="@dimen/dp_5"
         app:text_color="#654a26"
-        app:tile_margin="7dp"
-        app:tile_text_size="40sp">
+        app:tile_margin="@dimen/dp_7"
+        app:tile_text_size="@dimen/sp_32">
 
     </com.zhangshen147.android.simple2048.view.GameBoardLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="10dp"
+        android:layout_margin="@dimen/dp_10"
         android:fontFamily="@font/clearsans_bold"
-        android:textAlignment="center"
         android:text="@string/game_notice"
-        android:textSize="18sp" />
+        android:textAlignment="center"
+        android:textSize="@dimen/sp_18" />
 
 
 </LinearLayout>
