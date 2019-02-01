@@ -12,7 +12,8 @@ import android.view.View;
 import com.zhangshen147.android.simple2048.R;
 
 /**
- * @describe 自定义View——积分板
+ * @author zhangshen
+ * @version 1.0
  */
 public class ScoreView extends View{
 

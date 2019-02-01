@@ -1,5 +1,9 @@
 package com.zhangshen147.android.simple2048.config;
 
+/**
+ * @author zhangshen
+ * @version 1.0
+ */
 public class GameConfig {
     // 4*4 game board
     public static final int GAME_LEVEL = 4;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="GameBoardLayout">
+    <declare-styleable name="MainGameBoard">
         <!-- dimension related attrs -->
         <!-- 整个界面分为上、中、下三个部分，上面展示游戏标题和得分信息，中间是游戏面板，底部是提示信息 -->
         <attr name="top_width" format="dimension"></attr>

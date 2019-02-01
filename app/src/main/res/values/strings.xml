@@ -2,4 +2,7 @@
     <string name="app_name">simple2048</string>
     <string name="game_notice">swipe to move.2+2=4.Reach 2048</string>
     <string name="title_2048">2048</string>
+    <string name="game_fail">游戏失败!</string>
+    <string name="success">抵达2048，是否继续？</string>
+    <string name="perfect_success">完美通关！</string>
 </resources>

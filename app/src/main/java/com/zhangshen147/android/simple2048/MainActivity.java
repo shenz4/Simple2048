@@ -3,30 +3,38 @@ package com.zhangshen147.android.simple2048;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 
 import com.zhangshen147.android.simple2048.config.GameConfig;
-import com.zhangshen147.android.simple2048.enumerate.Action;
 import com.zhangshen147.android.simple2048.enumerate.GameStatus;
 import com.zhangshen147.android.simple2048.interfaces.OnGameStatusChangedListener;
-import com.zhangshen147.android.simple2048.view.GameBoardLayout;
+import com.zhangshen147.android.simple2048.view.MainGameBoard;
 import com.zhangshen147.android.simple2048.view.ScoreView;
 
+/**
+ * @author zhangshen
+ * @version 1.0
+ */
 public class MainActivity extends AppCompatActivity implements OnGameStatusChangedListener {
+
+    public static final String TAG = "MainActivity";
+    public static final String SP_SCORE = "score";
+    public static final String SP_STATUS = "status";
+    public static final String SP_ARRAYS = "arrays";
+    public static final String SP_FLING = "fling";
 
     private ScoreView mCurrentScoreView;
     private ScoreView mHigestScoreView;
     private ImageView mNewGameButton;
-    private GameBoardLayout mGameBoard;
+    private MainGameBoard mMainGameBoard;
 
-    private GestureDetector mGestDetector;
-    private Handler mHandle = new Handler();
+    // 只使用 1 次就永远置 false 的布尔值，当 activity 第一次启动时，程序需自启动游戏，
+    // 但为了避免 home 键按下又返回后，由于重新获取焦点而导致重开游戏，需用过 1 次后将其置 false
+    private boolean mSingleton = true;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,119 +43,178 @@ public class MainActivity extends AppCompatActivity implements OnGameStatusChang
         setContentView(R.layout.activity_main);
         findView();
         addListener();
+        Log.d(TAG, "onCreate: ");
 
-        mGestDetector = new GestureDetector(this, new MyGestureListener());
-        mHandle.postAtTime(new Runnable() {
-            @Override
-            public void run() {
-                mGameBoard.newGame();
-            }
-        }, 2000);
+        // 取出最高分
+        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
+        int highScore = sp.getInt(GameConfig.SP_KEY_HIGHESTSCORE, 0);
+        mHigestScoreView.setScore(highScore);
+    }
+
+
+    // 当视图获得焦点时，自动开启游戏
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && mSingleton){
+            mMainGameBoard.newGame();
+        }
+        mSingleton = false;
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // 数据持久化，将当前分数、游戏状态、滑动标志位暂存到 SP 中
+        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
+        int score = mMainGameBoard.getCurrentScore();
+        String status = mMainGameBoard.getCurrentGameStatus().toString();
+        boolean fling = mMainGameBoard.getIsEnableFling();
+        sp.edit().putInt(SP_SCORE, score)
+                .putString(SP_STATUS, status)
+                .putBoolean(SP_FLING, fling)
+                .apply();
+        Log.d(TAG, "onPause: 往SP中存入 " + score);
+        Log.d(TAG, "onPause: 往SP中存入 " + status);
+        Log.d(TAG, "onPause: 往SP中存入 " + fling);
+
+        // 数据持久化，将二维数组暂存到 SP 中
+        // TODO
 
     }
 
-    private void addListener() {
-        mNewGameButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mGameBoard.newGame();
-            }
-        });
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        // 数据持久化，从 SP 中取出暂存的当前分数、游戏状态
+        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
+        int score = sp.getInt(SP_SCORE, 0);
+        String status = sp.getString(SP_STATUS, "NORMAL");
+        boolean fling = sp.getBoolean(SP_FLING, true);
+        mMainGameBoard.setCurrentScore(score);
+        mMainGameBoard.setCurrentGameStatus(GameStatus.valueOf(status));
+        mMainGameBoard.setIsEnableFling(fling);
+
+        Log.d(TAG, "onResume: 从SP中读出 " + score);
+        Log.d(TAG, "onResume: 从SP中读出 " + status);
+        Log.d(TAG, "onResume: 从SP中读出 " + fling);
+
+        // 数据持久化，从 SP 中取出二维数组
+        // TODO
     }
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause: ");
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume: ");
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy: ");
+    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart: ");
+    }
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.d(TAG, "onRestart: ");
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop: ");
+    }
+
+
+    // The next 5 methods with @Override is implementations of OnGameStatusChangedListener
+    @Override
+    public void onScoreChange(int score) {
+        mCurrentScoreView.setScore(score);
+    }
+
+
+    @Override
+    public void onGameNormal() {
+        mMainGameBoard.mCurrentGameStatus = GameStatus.NORMAL;
+        mMainGameBoard.invalidate();
+        mMainGameBoard.mIsEnableFling = true;
+        mNewGameButton.setActivated(false);
+    }
+
+
+    @Override
+    public void onGameFail(int score) {
+        mMainGameBoard.mCurrentGameStatus = GameStatus.FAIL;
+        mMainGameBoard.invalidate();
+        mMainGameBoard.mIsEnableFling = false;
+        mNewGameButton.setActivated(true);
+        saveScoreToSP(score);
+        mMainGameBoard.setCurrentScore(getScoreFromSP());
+    }
+
+
+    @Override
+    public void onGameSuccess(int score) {
+        mMainGameBoard.mCurrentGameStatus = GameStatus.SUCCESS;
+        mMainGameBoard.invalidate();
+        mMainGameBoard.mIsEnableFling = false;
+        mNewGameButton.setActivated(false);
+        saveScoreToSP(score);
+        mMainGameBoard.setCurrentScore(getScoreFromSP());
+    }
+
+
+    @Override
+    public void onGameSuccessFinally(int score) {
+        mMainGameBoard.mCurrentGameStatus = GameStatus.SUCCESS_FINALLY;
+        mMainGameBoard.invalidate();
+        mMainGameBoard.mIsEnableFling = false;
+        mNewGameButton.setActivated(true);
+        saveScoreToSP(score);
+        mMainGameBoard.setCurrentScore(getScoreFromSP());
+    }
+
 
     private void findView() {
         mCurrentScoreView = findViewById(R.id.current_score);
         mHigestScoreView = findViewById(R.id.highest_score);
         mNewGameButton = findViewById(R.id.new_game);
-        mGameBoard = findViewById(R.id.layout_game_board);
+        mMainGameBoard = findViewById(R.id.layout_game_board);
     }
 
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        // 读取 sp 之前存储过的 highest score
-        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
-        int score = sp.getInt(GameConfig.SP_KEY_HIGHESTSCORE, 0);
-        mHigestScoreView.setScore(score);
-
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return mGestDetector.onTouchEvent(event);
+    private void addListener() {
+        mNewGameButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mMainGameBoard.newGame();
+            }
+        });
     }
 
 
-    // GameBoardView 的回调方法，每次得分时，在这里更新记分板分数
-    @Override
-    public void onScoreChange(int score) {
-        mCurrentScoreView.setScore(score);
-        // 读取 sp 之前存储过的 highest score
-        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
-        int highestScore = sp.getInt(GameConfig.SP_KEY_HIGHESTSCORE, 0);
-        mHigestScoreView.setScore(highestScore);
-    }
-
-
-    // GameBoardView 的回调方法，游戏结束时，弹出 game over 界面
-    @Override
-    public void onGameOver(int score) {
-
-        // 利用 SP 保存数据
+    private void saveScoreToSP(int score) {
         SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
         int beforeHighestScore = sp.getInt(GameConfig.SP_KEY_HIGHESTSCORE, 0);
         if (score > beforeHighestScore) {
             sp.edit().putInt(GameConfig.SP_KEY_HIGHESTSCORE, score).apply();
         }
-
     }
 
 
-
-    /**
-     * @describe 手势监听，响应上下左右滑动事件
-     */
-    private class MyGestureListener extends GestureDetector.SimpleOnGestureListener {
-
-        private static final String TAG = "MyGestureListener";
-
-        @Override
-        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-
-            float x = e2.getX() - e1.getX();
-            float y = e2.getY() - e1.getY();
-
-            if (Math.abs(velocityX) >= Math.abs(velocityY)) {
-                if (x > GameConfig.FLING_MIN_DISTANCE) {
-                    mGameBoard.action(Action.RIGHT);
-                    Log.d(TAG, "onFling: RIGHT");
-                    return true;
-                }
-                if (x < -GameConfig.FLING_MIN_DISTANCE) {
-                    mGameBoard.action(Action.LEFT);
-                    Log.d(TAG, "onFling: LEFT");
-                    return true;
-                }
-
-            } else {
-                if (y > GameConfig.FLING_MIN_DISTANCE) {
-                    mGameBoard.action(Action.DOWN);
-                    Log.d(TAG, "onFling: DOWN");
-                    return true;
-                }
-                if (y < -GameConfig.FLING_MIN_DISTANCE) {
-                    mGameBoard.mCurrentGameStatus = GameStatus.FAIL;
-                    mGameBoard.invalidate();
-//                    mGameBoard.action(Action.UP);
-                    Log.d(TAG, "onFling: UP");
-                    return true;
-                }
-            }
-            return true;
-        }
+    private int getScoreFromSP() {
+        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
+        return sp.getInt(GameConfig.SP_KEY_HIGHESTSCORE, 0);
     }
-
-
 }

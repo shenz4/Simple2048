@@ -5,9 +5,10 @@
     <color name="colorAccent">#FF4081</color>
 
     <!--global text config-->
+    <color name="text_black_light">#776e65</color>
     <color name="text_white">#f9f6f2</color>
-    <color name="text_brown">#d6cdc4</color>
-    <color name="text_black">#56504a</color>
+    <color name="text_brown">#8f7a66</color>
+    <color name="text_grey">#ece2d7</color>
 
     <!--global background config-->
     <color name="app_background">#faf8ef</color>

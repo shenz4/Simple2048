@@ -1,5 +1,9 @@
 package com.zhangshen147.android.simple2048.enumerate;
 
+/**
+ * @author zhangshen
+ * @version 1.0
+ */
 public enum GameStatus {
-    NORMAL,FAIL,STEP_SUCCESS,EVENTLY_SUCCESS
+    NORMAL,FAIL, SUCCESS, SUCCESS_FINALLY
 }
