@@ -19,10 +19,12 @@ import com.zhangshen147.android.simple2048.config.GameConfig;
 import com.zhangshen147.android.simple2048.enumerate.Action;
 import com.zhangshen147.android.simple2048.enumerate.GameStatus;
 import com.zhangshen147.android.simple2048.interfaces.OnGameStatusChangedListener;
+import com.zhangshen147.android.simple2048.util.AnimationManager;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * @author zhangshen
@@ -31,18 +33,14 @@ import java.util.Random;
 public class MainGameBoard extends RelativeLayout {
 
     private static final String TAG = "GameBoard";
-
-    // MainGameBoard View's height and width
-    private int mLayoutWidth;
-    private int mLayoutHeight;
-
-    // Tile View's margin which makes tiles separate
-    private float mTileMargin;
-
     // public fields
     public GameStatus mCurrentGameStatus;
     public boolean mIsEnableFling;
-
+    // MainGameBoard View's height and width
+    private int mLayoutWidth;
+    private int mLayoutHeight;
+    // Tile View's margin which makes tiles separate
+    private float mTileMargin;
     // private fields
     private TileView[][] mTiles;
     private GestureDetector mGestDetector;
@@ -50,6 +48,7 @@ public class MainGameBoard extends RelativeLayout {
     private OnGameStatusChangedListener mGameStatusListener;
     private int mCurrentScore;
     private int mTileTextSize;
+    private AnimationManager mAnimator;
 
     // used only once
     private boolean once = true;
@@ -59,18 +58,21 @@ public class MainGameBoard extends RelativeLayout {
     public MainGameBoard(Context context) {
         this(context, null);
     }
+
     public MainGameBoard(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
+
     public MainGameBoard(Context context, AttributeSet attrs, int defStyleAttr) {
 
         super(context, attrs, defStyleAttr);
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.MainGameBoard);
         mTileMargin = ta.getDimension(R.styleable.MainGameBoard_tile_margin, 2);
-        mTileTextSize = (int)ta.getDimension(R.styleable.MainGameBoard_tile_text_size, 0);
+        mTileTextSize = (int) ta.getDimension(R.styleable.MainGameBoard_tile_text_size, 0);
         ta.recycle();
 
         // init
+        mAnimator = new AnimationManager(this);
         mCurrentGameStatus = GameStatus.NORMAL;
         mGameStatusListener = (OnGameStatusChangedListener) context;
         mGestDetector = new GestureDetector(getContext(), new MyGestureListener());
@@ -104,7 +106,7 @@ public class MainGameBoard extends RelativeLayout {
             int n = GameConfig.GAME_LEVEL;
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
-                    if(mTiles[i][j] == null){
+                    if (mTiles[i][j] == null) {
                         mTiles[i][j] = new TileView(getContext(), mTileTextSize);
                     }
                     TileView currentTile = mTiles[i][j];
@@ -157,12 +159,12 @@ public class MainGameBoard extends RelativeLayout {
 
 
     private void addListener() {
-        getRootView().setOnClickListener(new View.OnClickListener(){
+        getRootView().setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!mIsEnableFling){
+                if (!mIsEnableFling) {
                     mIsEnableFling = !mIsEnableFling;
-                    switch (mCurrentGameStatus){
+                    switch (mCurrentGameStatus) {
                         case FAIL:
                             mCurrentGameStatus = GameStatus.NORMAL;
                             mGameStatusListener.onGameNormal();
@@ -185,7 +187,7 @@ public class MainGameBoard extends RelativeLayout {
         int transparentColor = Color.parseColor("#61ffffff");
         String shownText;
         Canvas canvas = new Canvas(bitmap);
-        switch (mCurrentGameStatus){
+        switch (mCurrentGameStatus) {
             case NORMAL:
                 break;
             case FAIL:
@@ -221,8 +223,8 @@ public class MainGameBoard extends RelativeLayout {
 
 
     // 在空瓦片处随机生成 2 或 4
-    private void generateNum() {
-        
+    public void generateNum() {
+
         if (isHasEmptyPosition()) {
             int n = GameConfig.GAME_LEVEL;
             Random random = new Random();
@@ -292,109 +294,130 @@ public class MainGameBoard extends RelativeLayout {
     }
 
 
-    void action(Action action) {
+    void attemptToMove(Action action) {
         int n = GameConfig.GAME_LEVEL;
         switch (action) {
             case UP:
-                // 上滑，需要按列，从上往下收集非 0 数字
                 for (int j = 0; j < n; j++) {
-
-                    // 把这一列的值不为 0 的瓦片收集起来
-                    List<TileView> column = new ArrayList<TileView>();
+                    ArrayBlockingQueue<TileView> queue = new ArrayBlockingQueue<>(n);
                     for (int i = 0; i < n; i++) {
                         if (mTiles[i][j].getValue() != 0) {
-                            column.add(mTiles[i][j]);
+                            queue.add(mTiles[i][j]);
                         }
                     }
-                    // 转 list 为 array
-                    int[] num_array = convertListToArray(column, n);
-                    // 若需要移动，则合并
-                    if (isRequireMerge(num_array)) {
-                        mergeTiles(num_array);
+
+                    for (int i = 0; i < n; i++) {
+                        TileView source = queue.poll();
+                        if (source == null) {
+                            break;
+                        }
+                        TileView dest = mTiles[i][j];
+                        mAnimator.moveToUp(source, dest);
                     }
-                    // 在瓦片中放入数组中的新值
-                    int count = 0;
-                    for (int i = 0; i <= n-1; i++) {
-                        mTiles[i][j].setValue(num_array[count]);
-                        count++;
+
+                    for (int i = 1; i < n && mTiles[i][j].getValue() != 0; i++) {
+                        TileView dest = mTiles[i][j];
+                        TileView source = mTiles[i][j + 1];
+                        if (dest.getValue() == source.getValue()) {
+                            mAnimator.moveToUp(source, dest);
+                            dest.setValue(2 * dest.getValue());
+                            mCurrentScore += dest.getValue();
+                            mGameStatusListener.onScoreChange(mCurrentScore);
+                        }
                     }
                 }
                 break;
             case DOWN:
-                // 下滑，需要按列，从下往上收集数字
                 for (int j = 0; j < n; j++) {
-
-                    // 把这一列的值不为 0 的瓦片收集起来
-                    List<TileView> column= new ArrayList<TileView>();
+                    ArrayBlockingQueue<TileView> queue = new ArrayBlockingQueue<>(n);
                     for (int i = n - 1; i >= 0; i--) {
                         if (mTiles[i][j].getValue() != 0) {
-                            column.add(mTiles[i][j]);
+                            queue.add(mTiles[i][j]);
                         }
                     }
-                    // 转 list 为 array
-                    int[] num_array = convertListToArray(column, n);
-                    // 检测是否需要合并操作，如有进行之
-                    if (isRequireMerge(num_array)) {
-                        mergeTiles(num_array);
-                    }
-                    // 在瓦片中放入数组中的新值
-                    int count = 0;
+
                     for (int i = n - 1; i >= 0; i--) {
-                        mTiles[i][j].setValue(num_array[count]);
-                        count++;
+                        TileView source = queue.poll();
+                        if (source == null) {
+                            break;
+                        }
+                        TileView dest = mTiles[i][j];
+                        mAnimator.moveToDown(source, dest);
+                    }
+
+                    for (int i = n - 2; i >= n && mTiles[i][j].getValue() != 0; i--) {
+                        TileView dest = mTiles[i][j];
+                        TileView source = mTiles[i][j + 1];
+                        if (dest.getValue() == source.getValue()) {
+                            mAnimator.moveToDown(source, dest);
+                            dest.setValue(2 * dest.getValue());
+                            mCurrentScore += dest.getValue();
+                            mGameStatusListener.onScoreChange(mCurrentScore);
+                        }
                     }
                 }
                 break;
             case LEFT:
-                // 左滑，需要按行，从左到右收集数字
                 for (int i = 0; i < n; i++) {
-
-                    List<TileView> row = new ArrayList<TileView>();
+                    ArrayBlockingQueue<TileView> queue = new ArrayBlockingQueue<>(n);
                     for (int j = 0; j < n; j++) {
                         if (mTiles[i][j].getValue() != 0) {
-                            row.add(mTiles[i][j]);
+                            queue.add(mTiles[i][j]);
                         }
                     }
-
-                    int[] num_array = convertListToArray(row, n);
-                    if (isRequireMerge(num_array)) {
-                        mergeTiles(num_array);
+                    for (int j = 0; j < n; j++) {
+                        TileView source = queue.poll();
+                        if (source == null) {
+                            break;
+                        }
+                        TileView dest = mTiles[i][j];
+                        dest.setValue(dest.getValue());
+                        mAnimator.moveToLeft(source, dest);
                     }
 
-                    int count = 0;
-                    for (int j = 0; j < n; j++) {
-                        mTiles[i][j].setValue(num_array[count]);
-                        count++;
+                    for (int j = 1; j < n && mTiles[i][j].getValue() != 0; j++) {
+                        TileView dest = mTiles[i][j];
+                        TileView source = mTiles[i][j - 1];
+                        if (dest.getValue() == source.getValue()) {
+                            mAnimator.moveToLeft(source, dest);
+                            dest.setValue(2 * dest.getValue());
+                            mCurrentScore += dest.getValue();
+                            mGameStatusListener.onScoreChange(mCurrentScore);
+                        }
                     }
                 }
                 break;
             case RIGHT:
-                // 右滑，需要按行，从右到左收集数字
                 for (int i = 0; i < n; i++) {
-
-                    List<TileView> row = new ArrayList<TileView>();
-                    for (int j = n-1; j >= 0; j--) {
+                    ArrayBlockingQueue<TileView> queue = new ArrayBlockingQueue<>(n);
+                    for (int j = n - 1; j >= 0; j--) {
                         if (mTiles[i][j].getValue() != 0) {
-                            row.add(mTiles[i][j]);
+                            queue.add(mTiles[i][j]);
                         }
                     }
 
-                    int[] num_array = convertListToArray(row, n);
-
-                    if (isRequireMerge(num_array)) {
-                        mergeTiles(num_array);
+                    for (int j = n - 1; j >= 0; j--) {
+                        TileView source = queue.poll();
+                        if (source == null) {
+                            break;
+                        }
+                        TileView dest = mTiles[i][j];
+                        mAnimator.moveToRight(source, dest);
                     }
 
-                    int count = 0;
-                    for (int j = n-1; j >= 0; j--) {
-                        mTiles[i][j].setValue(num_array[count]);
-                        count++;
+                    for (int j = n - 2; j >= n && mTiles[i][j].getValue() != 0; j--) {
+                        TileView dest = mTiles[i][j];
+                        TileView source = mTiles[i][j + 1];
+                        if (dest.getValue() == source.getValue()) {
+                            mAnimator.moveToRight(source, dest);
+                            dest.setValue(2 * dest.getValue());
+                            mCurrentScore += dest.getValue();
+                            mGameStatusListener.onScoreChange(mCurrentScore);
+                        }
                     }
                 }
                 break;
-
         }
-        generateNum();
     }
 
 
@@ -406,7 +429,7 @@ public class MainGameBoard extends RelativeLayout {
 
     boolean isRequireMerge(int[] array) {
         for (int i = 0; i < array.length - 1; i++) {
-            if (array[i] == array[i+1]) {
+            if (array[i] == array[i + 1]) {
                 return true;
             }
         }
@@ -416,10 +439,11 @@ public class MainGameBoard extends RelativeLayout {
 
     /**
      * 把 arrayList 转存到固定大小的数组中，方便操作
-     * @param sourceList 需转换的 list
+     *
+     * @param sourceList   需转换的 list
      * @param expectedSize 目标数组的大小
      */
-    private int[] convertListToArray(List<TileView> sourceList, int expectedSize){
+    private int[] convertListToArray(List<TileView> sourceList, int expectedSize) {
 
         int[] destArray = new int[expectedSize];
 
@@ -428,15 +452,15 @@ public class MainGameBoard extends RelativeLayout {
             destArray[k] = sourceList.get(k).getValue();
         }
         // 有空位则补 0
-        for ( int k = sourceList.size(); k < expectedSize; k++){
+        for (int k = sourceList.size(); k < expectedSize; k++) {
             destArray[k] = 0;
         }
         return destArray;
     }
 
 
-    private boolean isGameSuccess(){
-        if (mCurrentGameStatus != GameStatus.NORMAL){
+    private boolean isGameSuccess() {
+        if (mCurrentGameStatus != GameStatus.NORMAL) {
             return false;
         }
         for (TileView[] items : mTiles) {
@@ -449,8 +473,8 @@ public class MainGameBoard extends RelativeLayout {
         return false;
     }
 
-    private boolean isGameSuccessFinally(){
-        if(mCurrentGameStatus != GameStatus.SUCCESS){
+    private boolean isGameSuccessFinally() {
+        if (mCurrentGameStatus != GameStatus.SUCCESS) {
             return false;
         }
         for (TileView[] items : mTiles) {
@@ -468,19 +492,19 @@ public class MainGameBoard extends RelativeLayout {
         // 若前面的瓦片取值与自身相同，则合并之
 
         for (int i = 0; i < array.length - 1; i++) {
-            if (array[i] == array[i+1]) {
+            if (array[i] == array[i + 1]) {
 
                 // 值翻倍
                 int val = array[i] * 2;
                 array[i] = val;
                 // 加分
                 mCurrentScore += val;
-                if (mGameStatusListener != null){
+                if (mGameStatusListener != null) {
                     mGameStatusListener.onScoreChange(mCurrentScore);
                 }
                 // 前移
                 for (int k = i + 1; k < array.length - 1; k++) {
-                    array[k] = array[k+1];
+                    array[k] = array[k + 1];
                 }
                 // 最后一位置0
                 array[array.length - 1] = 0;
@@ -489,10 +513,8 @@ public class MainGameBoard extends RelativeLayout {
     }
 
 
-    
     /**
-     * @describe
-     * 这个手势探测器需要根据 mIsEnableFling 这个成员变量 2 种状态中来回切换，其中：
+     * @describe 这个手势探测器需要根据 mIsEnableFling 这个成员变量 2 种状态中来回切换，其中：
      * 状态 1 为：响应上下左右滑动事件
      * 状态 2 为：响应触摸事件
      */
@@ -509,10 +531,10 @@ public class MainGameBoard extends RelativeLayout {
         public boolean onSingleTapUp(MotionEvent e) {
 
             // 如果当前状态允许响应滑动事件，说明此时不需要响应触摸事件，凭空消费事件即可
-            if(mIsEnableFling){
-               return true;
+            if (mIsEnableFling) {
+                return true;
             }
-            if (mCurrentGameStatus == GameStatus.SUCCESS){
+            if (mCurrentGameStatus == GameStatus.SUCCESS) {
                 mCurrentGameStatus = GameStatus.NORMAL;
                 mGameStatusListener.onGameNormal();
             }
@@ -524,7 +546,7 @@ public class MainGameBoard extends RelativeLayout {
         public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 
             // 如果当前状态不允许响应滑动事件，凭空消费事件即可
-            if(!mIsEnableFling){
+            if (!mIsEnableFling) {
                 return true;
             }
 
@@ -532,36 +554,36 @@ public class MainGameBoard extends RelativeLayout {
             float y = e2.getY() - e1.getY();
             if (Math.abs(velocityX) >= Math.abs(velocityY)) {
                 if (x > GameConfig.FLING_MIN_DISTANCE) {
-                    action(Action.RIGHT);
+                    attemptToMove(Action.RIGHT);
                     Log.d(TAG, "onFling: RIGHT");
-                }else if (x < -GameConfig.FLING_MIN_DISTANCE) {
-                    action(Action.LEFT);
+                } else if (x < -GameConfig.FLING_MIN_DISTANCE) {
+                    attemptToMove(Action.LEFT);
                     Log.d(TAG, "onFling: LEFT");
                 }
 
             } else {
                 if (y > GameConfig.FLING_MIN_DISTANCE) {
-                    action(Action.DOWN);
+                    attemptToMove(Action.DOWN);
                     Log.d(TAG, "onFling: DOWN");
-                }else if (y < -GameConfig.FLING_MIN_DISTANCE) {
-                    action(Action.UP);
+                } else if (y < -GameConfig.FLING_MIN_DISTANCE) {
+                    attemptToMove(Action.UP);
                     Log.d(TAG, "onFling: UP");
                 }
             }
 
 
-            switch (mCurrentGameStatus){
+            switch (mCurrentGameStatus) {
                 case NORMAL:
-                    if (isGameFailed()){
+                    if (isGameFailed()) {
                         mGameStatusListener.onGameFail(mCurrentScore);
-                    }else if (isGameSuccess()){
+                    } else if (isGameSuccess()) {
                         mGameStatusListener.onGameSuccess(mCurrentScore);
                     }
                     break;
                 case SUCCESS:
-                    if (isGameFailed()){
+                    if (isGameFailed()) {
                         mGameStatusListener.onGameFail(mCurrentScore);
-                    }else if (isGameSuccessFinally()){
+                    } else if (isGameSuccessFinally()) {
                         mGameStatusListener.onGameSuccessFinally(mCurrentScore);
                     }
                     break;

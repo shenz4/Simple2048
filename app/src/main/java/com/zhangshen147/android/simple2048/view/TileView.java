@@ -23,7 +23,6 @@ public class TileView extends View{
     private static final String TAG = "TileView";
 
     private int mValue;
-    private String mValueString;
     private Paint mPaint = new Paint();
     private int mTextColor;
     private Rect mBound;
@@ -53,11 +52,10 @@ public class TileView extends View{
 
     public void setValue(int val){
         this.mValue = val;
-        mValueString = mValue + "";
         mPaint.setTextSize(mTextSize);
         mPaint.setTypeface(Typeface.DEFAULT_BOLD);
         mBound = new Rect();
-        mPaint.getTextBounds(mValueString,0, mValueString.length(), mBound);
+        mPaint.getTextBounds(mValue + "",0, (mValue + "").length(), mBound);
         invalidate();
         Log.d(TAG, "setValue: value为" + String.valueOf(val));
     }
@@ -138,7 +136,7 @@ public class TileView extends View{
             mPaint.setTextAlign(Paint.Align.CENTER);
             double x = getWidth() / 2.0;
             double y = getHeight() / 2.0 + mBound.height() / 2.0;
-            canvas.drawText(mValueString, (float) x, (float) y, mPaint);
+            canvas.drawText(mValue + "", (float) x, (float) y, mPaint);
         }
         Log.d(TAG, "onDraw: ");
     }
