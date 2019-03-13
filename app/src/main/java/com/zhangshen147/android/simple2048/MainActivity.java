@@ -20,40 +20,35 @@ import com.zhangshen147.android.simple2048.view.ScoreView;
  */
 public class MainActivity extends AppCompatActivity implements OnGameStatusChangedListener {
 
-    public static final String TAG = "MainActivity";
-    public static final String SP_SCORE = "score";
-    public static final String SP_STATUS = "status";
-    public static final String SP_ARRAYS = "arrays";
-    public static final String SP_FLING = "fling";
+    private static final String TAG = "MainActivity";
 
+    // view fields
     private ScoreView mCurrentScoreView;
     private ScoreView mHigestScoreView;
     private ImageView mNewGameButton;
     private MainGameBoard mMainGameBoard;
 
-    // 只使用 1 次就永远置 false 的布尔值，当 activity 第一次启动时，程序需自启动游戏，
-    // 但为了避免 home 键按下又返回后，由于重新获取焦点而导致重开游戏，需用过 1 次后将其置 false
+    // used only once
     private boolean mSingleton = true;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
         findView();
         addListener();
         Log.d(TAG, "onCreate: ");
 
         // 取出最高分
-        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
-        int highScore = sp.getInt(GameConfig.SP_KEY_HIGHESTSCORE, 0);
+        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE_2048, Context.MODE_PRIVATE);
+        int highScore = sp.getInt(GameConfig.SP_KEY_HIGHEST_SCORE, 0);
         mHigestScoreView.setScore(highScore);
     }
 
 
-    // 当视图获得焦点时，自动开启游戏
-    @Override
+
+    @Override             // 当视图获得焦点时，自动开启游戏
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus && mSingleton){
@@ -66,17 +61,17 @@ public class MainActivity extends AppCompatActivity implements OnGameStatusChang
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         // 数据持久化，将当前分数、游戏状态、滑动标志位暂存到 SP 中
-        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
-        int score = mMainGameBoard.getCurrentScore();
-        String status = mMainGameBoard.getCurrentGameStatus().toString();
-        boolean fling = mMainGameBoard.getIsEnableFling();
-        sp.edit().putInt(SP_SCORE, score)
-                .putString(SP_STATUS, status)
-                .putBoolean(SP_FLING, fling)
-                .apply();
-        Log.d(TAG, "onPause: 往SP中存入 " + score);
-        Log.d(TAG, "onPause: 往SP中存入 " + status);
-        Log.d(TAG, "onPause: 往SP中存入 " + fling);
+//        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE_2048, Context.MODE_PRIVATE);
+//        int score = mMainGameBoard.getCurrentScore();
+//        String status = mMainGameBoard.getCurrentGameStatus().toString();
+//        boolean fling = mMainGameBoard.getIsEnableFling();
+//        sp.edit().putInt(SP_SCORE, score)
+//                .putString(SP_STATUS, status)
+//                .putBoolean(SP_FLING, fling)
+//                .apply();
+//        Log.d(TAG, "onPause: 往SP中存入 " + score);
+//        Log.d(TAG, "onPause: 往SP中存入 " + status);
+//        Log.d(TAG, "onPause: 往SP中存入 " + fling);
 
         // 数据持久化，将二维数组暂存到 SP 中
         // TODO
@@ -88,17 +83,17 @@ public class MainActivity extends AppCompatActivity implements OnGameStatusChang
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         // 数据持久化，从 SP 中取出暂存的当前分数、游戏状态
-        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
-        int score = sp.getInt(SP_SCORE, 0);
-        String status = sp.getString(SP_STATUS, "NORMAL");
-        boolean fling = sp.getBoolean(SP_FLING, true);
-        mMainGameBoard.setCurrentScore(score);
-        mMainGameBoard.setCurrentGameStatus(GameStatus.valueOf(status));
-        mMainGameBoard.setIsEnableFling(fling);
-
-        Log.d(TAG, "onResume: 从SP中读出 " + score);
-        Log.d(TAG, "onResume: 从SP中读出 " + status);
-        Log.d(TAG, "onResume: 从SP中读出 " + fling);
+//        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE_2048, Context.MODE_PRIVATE);
+//        int score = sp.getInt(SP_SCORE, 0);
+//        String status = sp.getString(SP_STATUS, "NORMAL");
+//        boolean fling = sp.getBoolean(SP_FLING, true);
+//        mMainGameBoard.setCurrentScore(score);
+//        mMainGameBoard.setCurrentGameStatus(GameStatus.valueOf(status));
+//        mMainGameBoard.setIsEnableFling(fling);
+//
+//        Log.d(TAG, "onResume: 从SP中读出 " + score);
+//        Log.d(TAG, "onResume: 从SP中读出 " + status);
+//        Log.d(TAG, "onResume: 从SP中读出 " + fling);
 
         // 数据持久化，从 SP 中取出二维数组
         // TODO
@@ -137,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements OnGameStatusChang
     }
 
 
-    // The next 5 methods with @Override is implementations of OnGameStatusChangedListener
+    // The next 5 methods with @Override are implementations of OnGameStatusChangedListener
     @Override
     public void onScoreChange(int score) {
         mCurrentScoreView.setScore(score);
@@ -205,16 +200,16 @@ public class MainActivity extends AppCompatActivity implements OnGameStatusChang
 
 
     private void saveScoreToSP(int score) {
-        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
-        int beforeHighestScore = sp.getInt(GameConfig.SP_KEY_HIGHESTSCORE, 0);
+        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE_2048, Context.MODE_PRIVATE);
+        int beforeHighestScore = sp.getInt(GameConfig.SP_KEY_HIGHEST_SCORE, 0);
         if (score > beforeHighestScore) {
-            sp.edit().putInt(GameConfig.SP_KEY_HIGHESTSCORE, score).apply();
+            sp.edit().putInt(GameConfig.SP_KEY_HIGHEST_SCORE, score).apply();
         }
     }
 
 
     private int getScoreFromSP() {
-        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE2048, Context.MODE_PRIVATE);
-        return sp.getInt(GameConfig.SP_KEY_HIGHESTSCORE, 0);
+        SharedPreferences sp = getSharedPreferences(GameConfig.SP_SIMPLE_2048, Context.MODE_PRIVATE);
+        return sp.getInt(GameConfig.SP_KEY_HIGHEST_SCORE, 0);
     }
 }

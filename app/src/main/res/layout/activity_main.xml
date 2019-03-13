@@ -98,5 +98,4 @@
         android:textAlignment="center"
         android:textSize="@dimen/sp_18" />
 
-
 </LinearLayout>

@@ -28,12 +28,15 @@ public class TileView extends View{
     private int mTextColor;
     private Rect mBound;
 
-    // root view 的宽度、高度、内边距
+    // Tile View's width、height
     private int mViewWidth;
     private int mViewHeight;
+
+    // text size
     private float mTextSize;
 
 
+    // constructor
     public TileView(Context context, float textSize) {
         this(context, null, textSize);
     }
@@ -48,7 +51,7 @@ public class TileView extends View{
     }
 
 
-    void setValue(int val){
+    public void setValue(int val){
         this.mValue = val;
         mValueString = mValue + "";
         mPaint.setTextSize(mTextSize);
@@ -59,7 +62,8 @@ public class TileView extends View{
         Log.d(TAG, "setValue: value为" + String.valueOf(val));
     }
 
-    int getValue(){
+
+    public int getValue(){
        return mValue;
     }
 
@@ -136,6 +140,6 @@ public class TileView extends View{
             double y = getHeight() / 2.0 + mBound.height() / 2.0;
             canvas.drawText(mValueString, (float) x, (float) y, mPaint);
         }
-        Log.d(TAG, "onDraw: 被调用!");
+        Log.d(TAG, "onDraw: ");
     }
 }

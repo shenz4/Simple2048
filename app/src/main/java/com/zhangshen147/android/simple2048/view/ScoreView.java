@@ -17,27 +17,26 @@ import com.zhangshen147.android.simple2048.R;
  */
 public class ScoreView extends View{
 
-    // display content
+    // content to display
     private String mTitle;
     private int mScore;
 
     // color
-    private int mBackGroundColor;
     private int mTitleTextColor;
     private int mScoreTextColor;
 
 
     // dimension
-    private int mWidth;
-    private int mHeight;
+    private float mWidth;
+    private float mHeight;
     private float mTitleTextSize;
     private float mScoreTextSize;
 
     // others
-    Paint mPaint;
+    private Paint mPaint = new Paint();
 
 
-    // Constructor
+    // constructor
     public ScoreView(Context context) {
         this(context, null);
     }
@@ -49,12 +48,8 @@ public class ScoreView extends View{
 
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.ScoreView);
         for (int i = 0; i < ta.getIndexCount(); i++) {
-
             int option = ta.getIndex(i);
             switch ( option ){
-                case R.styleable.ScoreView_background_color:
-                    mBackGroundColor = ta.getColor(option, 0);
-                    break;
                 case R.styleable.ScoreView_score_color:
                     mScoreTextColor = ta.getColor(option, 0);
                     break;
@@ -72,9 +67,7 @@ public class ScoreView extends View{
                     break;
             }
         }
-
-        mPaint = new Paint();
-
+        ta.recycle();
     }
 
 
@@ -84,8 +77,8 @@ public class ScoreView extends View{
 
         mWidth = MeasureSpec.getSize(widthMeasureSpec);
         mHeight = MeasureSpec.getSize(heightMeasureSpec);
-
     }
+
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -94,8 +87,8 @@ public class ScoreView extends View{
         drawScore(canvas);
     }
 
-    private void drawTitle(Canvas canvas) {
 
+    private void drawTitle(Canvas canvas) {
         mPaint.setColor(mTitleTextColor);
         mPaint.setTextSize(mTitleTextSize);
         mPaint.setTypeface(Typeface.DEFAULT_BOLD);
@@ -110,17 +103,15 @@ public class ScoreView extends View{
     }
 
     private void drawScore(Canvas canvas) {
-
         mPaint.setColor(mScoreTextColor);
         mPaint.setTextSize(mScoreTextSize);
         mPaint.setTypeface(Typeface.DEFAULT_BOLD);
-
 
         float titleWidth = mPaint.measureText(String.valueOf(mScore));
         float startX = (mWidth - titleWidth)/2;
 
         Paint.FontMetrics fontMetrics = mPaint.getFontMetrics();
-        float centerY = 3*mHeight/4 + Math.abs(fontMetrics.ascent)/2 - fontMetrics.descent/2;
+        float centerY = 3 * mHeight / 4 + Math.abs(fontMetrics.ascent)/2 - fontMetrics.descent/2;
 
         canvas.drawText(String.valueOf(mScore), startX, centerY, mPaint);
     }
@@ -131,10 +122,4 @@ public class ScoreView extends View{
         mScore = score;
         invalidate();
     }
-    public int getScore(){
-        return mScore;
-    }
-
-
-
 }

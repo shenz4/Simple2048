@@ -1,6 +1,5 @@
 package com.zhangshen147.android.simple2048.view;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -33,27 +32,30 @@ public class MainGameBoard extends RelativeLayout {
 
     private static final String TAG = "GameBoard";
 
-    // MainGameBoard 自身的宽、高
+    // MainGameBoard View's height and width
     private int mLayoutWidth;
     private int mLayoutHeight;
 
-    // Tile 的外边距
+    // Tile View's margin which makes tiles separate
     private float mTileMargin;
 
-    // private
+    // public fields
+    public GameStatus mCurrentGameStatus;
+    public boolean mIsEnableFling;
+
+    // private fields
     private TileView[][] mTiles;
+    private GestureDetector mGestDetector;
+    private Paint mPaint = new Paint();
+    private OnGameStatusChangedListener mGameStatusListener;
     private int mCurrentScore;
     private int mTileTextSize;
-    private OnGameStatusChangedListener mGameStatusListener;
-    private boolean once = false;
-    private Paint mPaint = new Paint();
 
-    // public
-    public boolean mIsEnableFling;
-    public GestureDetector mGestDetector;
-    public GameStatus mCurrentGameStatus = GameStatus.NORMAL;
+    // used only once
+    private boolean once = true;
 
 
+    // constructor
     public MainGameBoard(Context context) {
         this(context, null);
     }
@@ -61,73 +63,45 @@ public class MainGameBoard extends RelativeLayout {
         this(context, attrs, 0);
     }
     public MainGameBoard(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
 
+        super(context, attrs, defStyleAttr);
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.MainGameBoard);
         mTileMargin = ta.getDimension(R.styleable.MainGameBoard_tile_margin, 2);
         mTileTextSize = (int)ta.getDimension(R.styleable.MainGameBoard_tile_text_size, 0);
         ta.recycle();
 
-        mGestDetector = new GestureDetector(getContext(), new MyGestureListener());
+        // init
+        mCurrentGameStatus = GameStatus.NORMAL;
         mGameStatusListener = (OnGameStatusChangedListener) context;
+        mGestDetector = new GestureDetector(getContext(), new MyGestureListener());
+        mTiles = new TileView[GameConfig.GAME_LEVEL][GameConfig.GAME_LEVEL];
 
         addListener();
-        mTiles = new TileView[GameConfig.GAME_LEVEL][GameConfig.GAME_LEVEL];
     }
 
-
-    public void setTiles(TileView[][] mTiles) {
-        this.mTiles = mTiles;
-    }
-
-    public TileView[][] getTiles(){
-        return mTiles;
-    }
-
-
-    public boolean getIsEnableFling() {
-        return mIsEnableFling;
-    }
-
-    public void setIsEnableFling(boolean mIsEnableFling) {
-        this.mIsEnableFling = mIsEnableFling;
-    }
-
-    public GameStatus getCurrentGameStatus() {
-        return mCurrentGameStatus;
-    }
-
-    public void setCurrentGameStatus(GameStatus mCurrentGameStatus) {
-        this.mCurrentGameStatus = mCurrentGameStatus;
-    }
-
-    public int getCurrentScore() {
-        return mCurrentScore;
-    }
 
     public void setCurrentScore(int mCurrentScore) {
         this.mCurrentScore = mCurrentScore;
     }
 
+
     @Override
     public void onDrawForeground(Canvas canvas) {
         super.onDrawForeground(canvas);
         Bitmap bitmap = Bitmap.createBitmap(mLayoutWidth, mLayoutHeight, Bitmap.Config.ARGB_8888);
-        drawForeground(bitmap);
+        drawMaskOnForeground(bitmap);
         canvas.drawBitmap(bitmap, 0, 0, null);
     }
+
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-
         mLayoutWidth = mLayoutHeight = Math.min(getMeasuredWidth(), getMeasuredHeight());
-        float mTileLength = (mLayoutWidth - 2 * mTileMargin * GameConfig.GAME_LEVEL)
-                / GameConfig.GAME_LEVEL;
+        float mTileLength = (mLayoutWidth - 2 * mTileMargin * GameConfig.GAME_LEVEL) / GameConfig.GAME_LEVEL;
 
-        if (!once) {
+        if (once) {
             int n = GameConfig.GAME_LEVEL;
-
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
                     if(mTiles[i][j] == null){
@@ -153,15 +127,13 @@ public class MainGameBoard extends RelativeLayout {
                     }
 
                     addView(currentTile, lp);
-                    Log.d(TAG, String.valueOf(i) + "," + String.valueOf(j));
-                    Log.d(TAG, "id=" + String.valueOf(currentTile.getId()));
                 }
 
             }
-            Log.d(TAG, "onMeasure: 添加布局!");
         }
-        once = true;
+        once = false;
         setMeasuredDimension(mLayoutWidth, mLayoutHeight);
+        Log.d(TAG, "onMeasure: ");
     }
 
 
@@ -180,7 +152,7 @@ public class MainGameBoard extends RelativeLayout {
             mGameStatusListener.onGameNormal();
             mGameStatusListener.onScoreChange(mCurrentScore);
         }
-        Log.d(TAG, "newGame: 开始游戏");
+        Log.d(TAG, "newGame: ");
     }
 
 
@@ -209,30 +181,31 @@ public class MainGameBoard extends RelativeLayout {
     }
 
 
-    private void drawForeground(Bitmap bitmap) {
+    private void drawMaskOnForeground(Bitmap bitmap) {
         int transparentColor = Color.parseColor("#61ffffff");
-        String showText;
+        String shownText;
         Canvas canvas = new Canvas(bitmap);
         switch (mCurrentGameStatus){
             case NORMAL:
                 break;
             case FAIL:
                 canvas.drawColor(transparentColor);
-                showText = getContext().getString(R.string.game_fail);
-                drawTextOnForeground(canvas, showText, mTileTextSize * 1.8);
+                shownText = getContext().getString(R.string.game_fail);
+                drawTextOnForeground(canvas, shownText, mTileTextSize * 1.8);
                 break;
             case SUCCESS:
                 canvas.drawColor(transparentColor);
-                showText = getContext().getString(R.string.success);
-                drawTextOnForeground(canvas, showText, mTileTextSize * 1.0);
+                shownText = getContext().getString(R.string.success);
+                drawTextOnForeground(canvas, shownText, mTileTextSize * 1.0);
                 break;
             case SUCCESS_FINALLY:
                 canvas.drawColor(transparentColor);
-                showText = getContext().getString(R.string.perfect_success);
-                drawTextOnForeground(canvas, showText, mTileTextSize * 1.8);
+                shownText = getContext().getString(R.string.perfect_success);
+                drawTextOnForeground(canvas, shownText, mTileTextSize * 1.8);
                 break;
         }
     }
+
 
     private void drawTextOnForeground(Canvas canvas, String text, double textSize) {
         mPaint.setColor(getResources().getColor(R.color.text_brown));
@@ -247,7 +220,7 @@ public class MainGameBoard extends RelativeLayout {
     }
 
 
-    // 在空位置生成随机数
+    // 在空瓦片处随机生成 2 或 4
     private void generateNum() {
         
         if (isHasEmptyPosition()) {
@@ -286,7 +259,6 @@ public class MainGameBoard extends RelativeLayout {
         } else {
 
             for (int i = 0; i < n; i++) {
-
                 // 把不为 0 的 tiles 收集起来
                 List<TileView> row = new ArrayList<TileView>();
                 for (int j = 0; j < n; j++) {
@@ -294,15 +266,14 @@ public class MainGameBoard extends RelativeLayout {
                         row.add(mTiles[i][j]);
                     }
                 }
-
                 // 若需要移动，则置 tag 为 false;
                 if (isRequireMerge(convertListToArray(row, n))) {
                     return false;
                 }
             }
 
-            for (int j = 0; j < n; j++) {
 
+            for (int j = 0; j < n; j++) {
                 // 把不为 0 的 tiles 收集起来
                 List<TileView> row = new ArrayList<TileView>();
                 for (int i = 0; i < n; i++) {
@@ -310,7 +281,6 @@ public class MainGameBoard extends RelativeLayout {
                         row.add(mTiles[i][j]);
                     }
                 }
-
                 // 若需要移动，则置 tag 为 false;
                 if (isRequireMerge(convertListToArray(row, n))) {
                     return false;
@@ -348,7 +318,6 @@ public class MainGameBoard extends RelativeLayout {
                         mTiles[i][j].setValue(num_array[count]);
                         count++;
                     }
-
                 }
                 break;
             case DOWN:
@@ -422,13 +391,13 @@ public class MainGameBoard extends RelativeLayout {
                         count++;
                     }
                 }
+                break;
+
         }
         generateNum();
-
     }
 
 
-    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         return mGestDetector.onTouchEvent(event);
@@ -520,8 +489,7 @@ public class MainGameBoard extends RelativeLayout {
     }
 
 
-
-
+    
     /**
      * @describe
      * 这个手势探测器需要根据 mIsEnableFling 这个成员变量 2 种状态中来回切换，其中：
